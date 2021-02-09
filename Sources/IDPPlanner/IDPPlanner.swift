@@ -1,7 +1,8 @@
 public protocol IDPCostEstimator {
     associatedtype Cost
     associatedtype Plan
-    func cost(_ plan: Plan) -> Cost
+
+    func cost(for plan: Plan) throws -> Cost
     func cost(_ cost: Cost, isCheaperThan other: Cost) -> Bool
 }
 
@@ -16,10 +17,10 @@ public protocol IDPPlanProvider {
     associatedtype Estimator: IDPCostEstimator where Estimator.Plan == Plan
     
     var costEstimator: Estimator { get }
-    func accessPlans(for: Relation) -> [Plan]
-    func joinPlans<C: Collection, D: Collection>(_ lhs: C, _ rhs: D) -> [Plan] where C.Element == Plan, D.Element == Plan
-    func prunePlans<C: Collection>(_ plans: C) -> [Plan] where C.Element == Plan
-    func finalizePlans<C: Collection>(_ plans: C) -> [Plan] where C.Element == Plan
+    func accessPlans(for: Relation) throws -> [Plan]
+    func joinPlans<C: Collection, D: Collection>(_ lhs: C, _ rhs: D) throws -> [Plan] where C.Element == Plan, D.Element == Plan
+    func prunePlans<C: Collection>(_ plans: C) throws -> [Plan] where C.Element == Plan
+    func finalizePlans<C: Collection>(_ plans: C) throws -> [Plan] where C.Element == Plan
 }
 
 public struct IDPPlanner<I: IDPPlanProvider> {
@@ -45,7 +46,7 @@ public struct IDPPlanner<I: IDPPlanProvider> {
         var optPlan = [Set<IDPToken>: [I.Plan]]()
         for relation in relations {
             let key = Set<IDPToken>([.relation(relation)])
-            optPlan[key] = provider.prunePlans(provider.accessPlans(for: relation))
+            optPlan[key] = try provider.prunePlans(provider.accessPlans(for: relation))
         }
         
         var todo : Set<IDPToken> = Set(relations.map { .relation($0) })
@@ -59,8 +60,8 @@ public struct IDPPlanner<I: IDPPlanProvider> {
                             throw IDPPlannerError.unsatisfiableJoinError
                         }
                         
-                        let plans = opt_s + provider.joinPlans(opt_o, opt_so)
-                        let pruned = provider.prunePlans(plans)
+                        let plans = try  opt_s + provider.joinPlans(opt_o, opt_so)
+                        let pruned = try provider.prunePlans(plans)
                         optPlan[s] = pruned
                     }
                 }
@@ -74,7 +75,7 @@ public struct IDPPlanner<I: IDPPlanProvider> {
             var minSet : Set<IDPToken>? = nil
             for v in todo.subsets(size: k) {
                 for p in optPlan[v, default: []] {
-                    let cost = provider.costEstimator.cost(p)
+                    let cost = try provider.costEstimator.cost(for: p)
                     if let _minCost = minCost {
                         if provider.costEstimator.cost(cost, isCheaperThan: _minCost) {
                             minCost = cost
@@ -113,8 +114,8 @@ public struct IDPPlanner<I: IDPPlanProvider> {
             throw IDPPlannerError.unsatisfiableJoinError
         }
         
-        let finalized = provider.finalizePlans(plans)
-        let pruned = provider.prunePlans(finalized)
+        let finalized = try provider.finalizePlans(plans)
+        let pruned = try provider.prunePlans(finalized)
         return pruned
     }
 }

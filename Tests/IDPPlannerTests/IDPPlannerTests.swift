@@ -21,7 +21,7 @@ struct Provider: IDPPlanProvider {
             self.costs = costs
         }
 
-        func cost(_ plan: Plan) -> Cost {
+        func cost(for plan: Plan) -> Cost {
             guard let cost = self.costs[plan.name] else {
                 print("COST: \(plan.name)")
                 return 1.0
@@ -107,7 +107,7 @@ final class IDPPlannerTests: XCTestCase {
 
             let plans = try idp.join([r1, r2, r3])
             let p = plans.first!
-            let cost = provider.costEstimator.cost(p)
+            let cost = provider.costEstimator.cost(for: p)
             switch k {
             case 2:
                 XCTAssertEqual(p.name, "join(join(scan(a)-scan(b))-scan(c))")
