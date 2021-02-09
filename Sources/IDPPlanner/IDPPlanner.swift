@@ -13,7 +13,7 @@ public enum IDPPlannerError: Error {
 
 public protocol IDPPlanProvider {
     associatedtype Relation: Hashable
-    associatedtype Plan: Hashable
+    associatedtype Plan
     associatedtype Estimator: IDPCostEstimator where Estimator.Plan == Plan
     
     var costEstimator: Estimator { get }
