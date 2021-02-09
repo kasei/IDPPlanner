@@ -24,17 +24,31 @@ public protocol IDPPlanProvider {
 }
 
 public struct IDPPlanner<I: IDPPlanProvider> {
+    public enum BlockSize {
+        case bestRow
+        case bestPlan
+    }
+    public enum BlockShape {
+        case balanced
+        case standard
+    }
+    
     typealias TokenValue = Int
     enum IDPToken: Hashable {
         case relation(I.Relation)
         case symbol(TokenValue)
     }
 
+    var blockSize: BlockSize
+    var blockShape: BlockShape
     var provider: I
     var k: Int
-    public init(_ provider: I, k: Int) {
+    
+    public init(_ provider: I, k: Int, blockSize: BlockSize = .bestRow, blockShape: BlockShape = .standard) {
         self.provider = provider
         self.k = k
+        self.blockSize = blockSize
+        self.blockShape = blockShape
     }
     
     public func join(_ relations: [I.Relation]) throws -> [I.Plan] {
@@ -100,7 +114,12 @@ public struct IDPPlanner<I: IDPPlanProvider> {
             let token = IDPToken.symbol(t)
 //            print("generating new token for \(p)")
             
-            optPlan[Set([token])] = [p]
+            switch self.blockSize {
+            case .bestPlan:
+                optPlan[Set([token])] = optPlan[v]
+            case .bestRow:
+                optPlan[Set([token])] = [p]
+            }
             todo.insert(token)
             todo.subtract(v)
             
