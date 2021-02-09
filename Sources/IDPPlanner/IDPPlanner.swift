@@ -116,9 +116,9 @@ public struct IDPPlanner<I: IDPPlanProvider> {
             
             switch self.blockSize {
             case .bestPlan:
-                optPlan[Set([token])] = optPlan[v]
-            case .bestRow:
                 optPlan[Set([token])] = [p]
+            case .bestRow:
+                optPlan[Set([token])] = optPlan[v]
             }
             todo.insert(token)
             todo.subtract(v)
