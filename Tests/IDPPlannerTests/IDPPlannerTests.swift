@@ -50,7 +50,6 @@ struct Provider: IDPPlanProvider {
         for l in lhs {
             for r in rhs {
                 let name = "join(\(l.name)-\(r.name))"
-                let cost = 1.0 // self.costs[name]!
                 plans.append(contentsOf: [
                     Plan(name: name, children: [l, r]),
                 ])
@@ -100,7 +99,7 @@ final class IDPPlannerTests: XCTestCase {
         for k in [2, 3] {
             let provider = Provider(costs: costs)
             
-            let idp = IDPPlanner(provider, k: k)
+            let idp = IDPPlanner(provider, k: k, blockSize: .bestPlan)
             let r1 = Relation(name: "a", scanCost: 2.0)
             let r2 = Relation(name: "b", scanCost: 5.0)
             let r3 = Relation(name: "c", scanCost: 3.0)

@@ -1,3 +1,5 @@
+import Algorithms
+
 public protocol IDPCostEstimator {
     associatedtype Cost
     associatedtype Plan
@@ -67,9 +69,11 @@ public struct IDPPlanner<I: IDPPlanProvider> {
         while todo.count > 1 {
             let k = min(self.k, todo.count)
             for i in 2...k {
-                for s in todo.subsets(size: i) {
+                for ss in todo.combinations(ofCount: i) {
+                    let s = Set(ss)
                     optPlan[s] = []
-                    for o in s.allProperSubsets {
+                    for oo in s.combinations(ofCount: 1..<s.count) {
+                        let o = Set(oo)
                         guard let opt_s = optPlan[s], let opt_o = optPlan[o], let opt_so = optPlan[s.subtracting(o)] else {
                             throw IDPPlannerError.unsatisfiableJoinError
                         }
@@ -87,7 +91,8 @@ public struct IDPPlanner<I: IDPPlanProvider> {
             var minCost : I.Estimator.Cost? = nil
             var minPlan : I.Plan? = nil
             var minSet : Set<IDPToken>? = nil
-            for v in todo.subsets(size: k) {
+            for vv in todo.combinations(ofCount: k) {
+                let v = Set(vv)
                 for p in optPlan[v, default: []] {
                     let cost = try provider.costEstimator.cost(for: p)
                     if let _minCost = minCost {
@@ -124,8 +129,8 @@ public struct IDPPlanner<I: IDPPlanProvider> {
             todo.subtract(v)
             
             
-            for o in v.allProperSubsets {
-                optPlan.removeValue(forKey: o)
+            for o in v.combinations(ofCount: 1..<v.count) {
+                optPlan.removeValue(forKey: Set(o))
             }
         }
         
